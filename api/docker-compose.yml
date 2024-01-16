@@ -33,5 +33,5 @@ services:
     depends_on:
       - db
 
-  volumes:
-    pgdata:
+volumes:
+  pgdata:
