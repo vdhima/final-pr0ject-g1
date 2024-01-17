@@ -7,8 +7,8 @@ services:
       - "5000:5000"
     depends_on:
       - db
-    environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/bookstore_db
+    env_file:
+      - .env
 
   db:
     image: postgres:13
