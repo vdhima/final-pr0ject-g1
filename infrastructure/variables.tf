@@ -16,7 +16,7 @@ variable "AWS_REGION" {
 
 variable "APP_NAME" {
   type    = string
-  default = "gh-sample-app"
+  default = "Final-Project-G1"
 }
 
 variable "STAGE" {
@@ -25,13 +25,13 @@ variable "STAGE" {
 }
 
 variable "DB_USERNAME" {
-  default = "postgres"
+  default = ""
 }
 
 variable "DB_PASSWORD" {
-  default = "postgres"
+  default = ""
 }
 
 variable "DB_NAME" {
-  default = "prod"
+  default = ""
 }
