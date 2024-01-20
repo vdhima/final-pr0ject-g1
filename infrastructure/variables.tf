@@ -16,7 +16,7 @@ variable "AWS_REGION" {
 
 variable "APP_NAME" {
   type    = string
-  default = "Final-Project-G1"
+  default = "final-project-g1"
 }
 
 variable "STAGE" {
