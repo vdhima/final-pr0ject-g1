@@ -34,6 +34,20 @@ jobs:
       run: terraform init
       working-directory: ./infrastructure
 
-    - name: Terraform Apply Destroy
-      run: terraform apply -destroy
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ./infrastructure
+
+    - name: Terraform Plan
+      run: terraform plan
+      working-directory: ./infrastructure
+
+    - name: Terraform Apply
+      if: github.event.inputs.destroy != 'true'
+      run: terraform apply -auto-approve
+      working-directory: ./infrastructure
+
+    - name: Terraform Destroy
+      if: github.event.inputs.destroy == 'true'
+      run: terraform destroy -auto-approve
       working-directory: ./infrastructure
