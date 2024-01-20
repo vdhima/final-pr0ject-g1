@@ -2,40 +2,38 @@ version: '3.8'
 services:
   api:
     build: .
-    container_name: api_container
+    container_name: api_container_g1
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      - databasa
     environment:
-      DATABASE_HOST: db
-      DATABASE_PORT: 5432
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: bookstore_db
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
 
-  db:
-    image: postgres:13
-    container_name: databasa_container
+  databasa:
+    image: postgres:latest
+    container_name: databasa
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: bookstore_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - databasag1:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin_container
+    container_name: pgadmin_container_g1
     ports:
       - "5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: skuadra@skuadra.com
       PGADMIN_DEFAULT_PASSWORD: admin
-    depends_on:
-      - db
 
 volumes:
-  pgdata:
+  databasag1:

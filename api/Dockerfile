@@ -1,6 +1,12 @@
 FROM node:16
 
-WORKDIR /usr/src/app
+ENV DATABASE_HOST ${DATABASE_HOST}
+ENV DATABASE_PORT ${DATABASE_PORT}
+ENV DATABASE_USER ${DATABASE_USER}
+ENV DATABASE_PASSWORD ${DATABASE_PASSWORD}
+ENV DATABASE_NAME ${DATABASE_NAME}
+
+WORKDIR /app
 
 COPY package*.json ./
 
@@ -8,12 +14,6 @@ RUN npm install
 
 COPY . .
 
-ENV DATABASE_HOST=db \
-    DATABASE_PORT=5432 \
-    DATABASE_USER=postgres \
-    DATABASE_PASSWORD=postgres \
-    DATABASE_NAME=bookstore_db
-
 EXPOSE 5000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]
