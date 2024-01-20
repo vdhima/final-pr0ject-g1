@@ -6,10 +6,10 @@ provider "aws" {
 
 terraform {
   cloud {
-    organization = "GH"
+    organization = "SUPERTORO"
 
     workspaces {
-      name = "Development"
+      name = "Final-Project-G1"
     }
   }
   required_providers {
