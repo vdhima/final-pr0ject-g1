@@ -2,15 +2,13 @@ version: '3.8'
 services:
   api:
     build:
-      context: /home/vasil/final-project/api
+      context: ./api
       dockerfile: Dockerfile
     container_name: api_container
     ports:
       - "5000:5000"
     depends_on:
       - db
-    #env_file:
-    #  - /home/vasil/final-project/api/.env
     environment:
       DATABASE_HOST: db
       DATABASE_PORT: 5432
@@ -20,15 +18,15 @@ services:
 
   web_client:
     build:
-      context: /home/vasil/final-project/web_client
+      context: ./web_client
       dockerfile: Dockerfile
     container_name: web_client_container
     ports:
       - "3000:3000"
     depends_on:
       - api
-    environment:
-      REACT_APP_SERVER_URL: "http://192.168.100.47:5000"
+    #environment:
+    #  REACT_APP_SERVER_URL: "http://localhost:5000"
 
   db:
     image: postgres:13
