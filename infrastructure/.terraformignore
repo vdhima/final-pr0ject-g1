@@ -1,6 +1,7 @@
 .terraformrc
 terraform.rc
 **/.terraform/*
+**/.infrastructure/*
 *.tfstate
 *.tfstate.*
 *.tfvars
