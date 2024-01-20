@@ -30,6 +30,10 @@ jobs:
     - name: Setup Terraform Cloud Credentials
       run: echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc    
 
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ./infrastructure
+
     - name: Terraform Apply Destroy
       run: terraform apply -destroy
       working-directory: ./infrastructure
