@@ -1,45 +1,38 @@
-name: CI/CD
+name: Terraform
 
 on:
   push:
-    branches: [ "vasil" ]
+    branches:
+      - vasil  # or any other branch you want to deploy from
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
-  build:
+  terraform:
     runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: 'your-aws-region'  # Set your AWS region here
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 'latest'  # Specify your Terraform version here
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+    - name: Terraform Init
+      run: terraform init
 
-      - name: Terraform Init
-        working-directory: Terraform-AWS-Services/elasticsearch/elasticsearch_configuration/
-        run: |
-          terraform init \
-            -backend-config "bucket=terraform-states-monitoring-platform" \
-            -backend-config "key=elasticsearch-terraform.tfstate"
-          terraform workspace new dev || terraform workspace select dev
-      - name: Terraform Format
-        working-directory: Terraform-AWS-Services/elasticsearch/elasticsearch_configuration/
-        run: terraform fmt
+    - name: Terraform Validate
+      run: terraform validate
 
-      - name: Terraform Plan
-        working-directory: Terraform-AWS-Services/elasticsearch/elasticsearch_configuration/
-        run: terraform plan -var="environment=development" -var="elasticsearch_password=${{ secrets.ELASTICSEARCH_PASSWORD }}"
+    - name: Terraform Plan
+      run: terraform plan
 
-      - name: Terraform Apply
-        working-directory: Terraform-AWS-Services/elasticsearch/elasticsearch_configuration/
-        run: terraform apply -var="environment=development" -var="elasticsearch_password=${{ secrets.ELASTICSEARCH_PASSWORD }}" -auto-approve
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+      if: github.ref == 'refs/heads/main'  # Only apply on main branch
