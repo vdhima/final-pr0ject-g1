@@ -3,8 +3,10 @@ name: Terraform
 on:
   push:
     branches:
-      - vasil  # or any other branch you want to deploy from
+      - vasil  # Set this to your main branch name
   pull_request:
+    branches:
+      - vasil  # Set this to include your main branch for PRs
 
 jobs:
   terraform:
@@ -13,7 +15,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: 'your-aws-region'  # Set your AWS region here
+      AWS_REGION: 'eu-north-1'  # Your AWS region
 
     steps:
     - name: Checkout Repository
@@ -26,13 +28,17 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
+      working-directory: ./infrastructure
 
     - name: Terraform Validate
       run: terraform validate
+      working-directory: ./infrastructure
 
     - name: Terraform Plan
       run: terraform plan
+      working-directory: ./infrastructure
 
     - name: Terraform Apply
       run: terraform apply -auto-approve
-      if: github.ref == 'refs/heads/main'  # Only apply on main branch
+      working-directory: ./infrastructure
+      if: github.ref == 'refs/heads/vasil'  # Only apply on the vasil branch
