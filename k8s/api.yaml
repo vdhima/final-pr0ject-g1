@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: final-project-g1-ecr-repository-production:latest
+          image: ${API_IMAGE_URL}
           ports:
             - containerPort: 5000
           env:
