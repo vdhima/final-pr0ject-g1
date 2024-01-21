@@ -72,7 +72,7 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/api app=129392916120.dkr.ecr.eu-north-1.amazonaws.com/final-project-g1-ecr-repository-production:latest
+        kubectl set image deployment/api app=https://129392916120.dkr.ecr.eu-north-1.amazonaws.com/final-project-g1-ecr-repository-production:latest
         kubectl rollout status deployment/api
 
     # Deploy Frontend to S3
