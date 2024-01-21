@@ -65,6 +65,12 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./api
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+    # Set Kubernetes context before deploying
+    - name: Set Kubernetes Context
+      run: |
+        kubectl config use-context $(kubectl config view -o=jsonpath='{.contexts[?(@.name == "api.yaml")].name}')
+      working-directory: ./k8s       
+
     # Deploy to Kubernetes
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1
