@@ -128,7 +128,7 @@ jobs:
           DATABASE_PASSWORD: ${{ needs.terraform.outputs.DB_PASSWORD }}
           DATABASE_NAME: ${{ needs.terraform.outputs.DB_NAME }}
         run: |
-          envsubst < ./kube/api.yaml | kubectl apply -f -
+          envsubst < ./k8s/api.yaml | kubectl apply -f -
           lb_endpoint=$(kubectl get service api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "LB_ENDPOINT=${lb_endpoint}" >> $GITHUB_OUTPUT
     outputs:
