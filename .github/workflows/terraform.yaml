@@ -3,10 +3,10 @@ name: Terraform
 on:
   push:
     branches:
-      - vasil  # Set this to your main branch name
+      - main  # Set this to your main branch name
   pull_request:
     branches:
-      - vasil  # Set this to include your main branch for PRs
+      - main  # Set this to include your main branch for PRs
 
 jobs:
   terraform:
@@ -43,7 +43,7 @@ jobs:
     - name: Terraform Apply
       run: terraform apply -auto-approve
       working-directory: ./infrastructure
-      if: github.ref == 'refs/heads/vasil'  # Only apply on the vasil branch
+      if: github.ref == 'refs/heads/main'  # Only apply on the vasil branch
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -78,4 +78,4 @@ jobs:
     #- name: Deploy Frontend to S3
     #  run: |
     #    aws s3 sync ./web_client s3://your-s3-bucket-name --acl public-read
-    #  if: github.ref == 'refs/heads/vasil'  # Only deploy on the vasil branch
+    #  if: github.ref == 'refs/heads/main'  # Only deploy on the vasil branch
