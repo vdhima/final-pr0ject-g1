@@ -1,83 +1,160 @@
-name: Terraform
+name: "Deploy"
 
 on:
   push:
     branches:
-      - main  # Set this to your main branch name
+      - master
   pull_request:
     branches:
-      - main  # Set this to include your main branch for PRs
+      - master
 
 jobs:
   terraform:
+    name: "Terraform"
     runs-on: ubuntu-latest
-
-    env:
-      AWS_REGION: 'eu-north-1'  # Your AWS region
-      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
-
+    defaults:
+      run:
+        shell: bash
+        working-directory: infrastructure
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 'latest'  # Specify your Terraform version here
-
-    - name: Setup Terraform Cloud Credentials
-      run: echo "credentials \"app.terraform.io\" { token = \"${{ secrets.TF_API_TOKEN }}\" }" > ~/.terraformrc    
-
-    - name: Terraform Init
-      run: terraform init
-      working-directory: ./infrastructure
-
-    - name: Terraform Validate
-      run: terraform validate
-      working-directory: ./infrastructure
-
-    - name: Terraform Plan
-      run: terraform plan
-      working-directory: ./infrastructure
-
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
-      working-directory: ./infrastructure
-      if: github.ref == 'refs/heads/main'  # Only apply on the vasil branch
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-north-1  # Replace with your AWS region
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: final-project-g1-ecr-repository-production  # Replace with your ECR repository name
-        #IMAGE_TAG: ${{ github.sha }}
-        IMAGE_TAG: latest
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./api
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG 
-
-    # Deploy to Kubernetes
-    - name: Set up Kubectl
-      uses: tale/setup-kubectl@v1
-
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl set image deployment/api app="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-        kubectl rollout status deployment/api
-
-
-    # Deploy Frontend to S3
-    #- name: Deploy Frontend to S3
-    #  run: |
-    #    aws s3 sync ./web_client s3://your-s3-bucket-name --acl public-read
-    #  if: github.ref == 'refs/heads/main'  # Only deploy on the vasil branch
+      - uses: actions/checkout@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+          terraform_wrapper: false
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+        continue-on-error: true
+      - name: Update Pull Request
+        uses: actions/github-script@0.9.0
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            <details><summary>Show Plan</summary>
+            \`\`\`${process.env.PLAN}\`\`\`
+            </details>
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+      - name: Terraform Apply
+        if: github.event_name == 'push'
+        run: terraform apply -auto-approve
+      - name: Terraform Output
+        id: output
+        if: github.event_name == 'push'
+        run: |
+          web_client_bucket_name=$(terraform output WEB_CLIENT_BUCKET_NAME)
+          web_client_domain=$(terraform output WEB_CLIENT_DOMAIN)
+          ecr_repository_name=$(terraform output ECR_REPOSITORY_NAME)
+          db_address=$(terraform output DB_ADDRESS)
+          db_port=$(terraform output DB_PORT)
+          db_username=$(terraform output DB_USERNAME)
+          db_password=$(terraform output DB_PASSWORD)
+          db_name=$(terraform output DB_NAME)
+          echo "WEB_CLIENT_BUCKET_NAME=${web_client_bucket_name}" >> $GITHUB_OUTPUT
+          echo "WEB_CLIENT_DOMAIN=${web_client_domain}" >> $GITHUB_OUTPUT
+          echo "ECR_REPOSITORY_NAME=${ecr_repository_name}" >> $GITHUB_OUTPUT
+          echo "DB_ADDRESS=${db_address}" >> $GITHUB_OUTPUT
+          echo "DB_PORT=${db_port}" >> $GITHUB_OUTPUT
+          echo "DB_USERNAME=${db_username}" >> $GITHUB_OUTPUT
+          echo "DB_PASSWORD=${db_password}" >> $GITHUB_OUTPUT
+          echo "DB_NAME=${db_name}" >> $GITHUB_OUTPUT
+    outputs:
+      WEB_CLIENT_BUCKET_NAME: ${{ steps.output.outputs.WEB_CLIENT_BUCKET_NAME }}
+      WEB_CLIENT_DOMAIN: ${{ steps.output.outputs.WEB_CLIENT_DOMAIN }}
+      ECR_REPOSITORY_NAME: ${{ steps.output.outputs.ECR_REPOSITORY_NAME }}
+      DB_ADDRESS: ${{ steps.output.outputs.DB_ADDRESS }}
+      DB_PORT: ${{ steps.output.outputs.DB_PORT }}
+      DB_USERNAME: ${{ steps.output.outputs.DB_USERNAME }}
+      DB_PASSWORD: ${{ steps.output.outputs.DB_PASSWORD }}
+      DB_NAME: ${{ steps.output.outputs.DB_NAME }}
+  build_api:
+    name: "Build API"
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - uses: actions/checkout@v3
+      - uses: tale/kubectl-action@v1
+        with:
+          base64-kube-config: ${{ secrets.KUBE_CONFIG_DATA }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: eu-north-1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ needs.terraform.outputs.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}" ./api
+          docker push "${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          echo "IMAGE_URL=${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+      - name: Deploy to EKS
+        id: deploy-to-eks
+        env:
+          API_IMAGE_URL: ${{ steps.build-image.outputs.IMAGE_URL }}
+          DATABASE_HOST: ${{ needs.terraform.outputs.DB_ADDRESS }}
+          DATABASE_PORT: ${{ needs.terraform.outputs.DB_PORT }}
+          DATABASE_USER: ${{ needs.terraform.outputs.DB_USERNAME }}
+          DATABASE_PASSWORD: ${{ needs.terraform.outputs.DB_PASSWORD }}
+          DATABASE_NAME: ${{ needs.terraform.outputs.DB_NAME }}
+        run: |
+          envsubst < ./kube/api.yaml | kubectl apply -f -
+          lb_endpoint=$(kubectl get service api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "LB_ENDPOINT=${lb_endpoint}" >> $GITHUB_OUTPUT
+    outputs:
+      LB_ENDPOINT: ${{ steps.deploy-to-eks.outputs.LB_ENDPOINT }}
+  build_web_client:
+    name: "Build Web Client"
+    runs-on: ubuntu-latest
+    needs:
+      - terraform
+      - build_api
+    defaults:
+      run:
+        shell: bash
+        working-directory: web_client
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: eu-north-1
+      - name: Build React App
+        run: |
+          npm install
+          export REACT_APP_SERVER_URL=http://${{ needs.build_api.outputs.LB_ENDPOINT }}
+          npm run build
+      - name: Deploy app build to S3 bucket
+        run: aws s3 sync ./build/ s3://${{ needs.terraform.outputs.WEB_CLIENT_BUCKET_NAME }} --delete
