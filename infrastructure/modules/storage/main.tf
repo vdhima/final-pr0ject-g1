@@ -1,15 +1,4 @@
-terraform {
-  required_version = ">= 0.12"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.0"
-    }
-  }
-}
-provider "aws" {
-  region = "eu-north-1"
-}
+
 resource "aws_s3_bucket" "my-static-website" {
   bucket        = "gh-090124"
   force_destroy = true
