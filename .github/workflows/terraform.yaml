@@ -96,7 +96,7 @@ jobs:
     needs: terraform
     steps:
       - uses: actions/checkout@v3
-      - uses: azure/kubectl-action@v1
+      - uses: tale/kubectl-action@v1
         with:
           base64-kube-config: ${{ secrets.KUBE_CONFIG_DATA }}
       - name: Configure AWS Credentials
