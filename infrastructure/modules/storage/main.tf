@@ -1,14 +1,14 @@
 terraform {
-    required_version = ">= 0.12"
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 3.0"
-        }
+  required_version = ">= 0.12"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
     }
+  }
 }
 provider "aws" {
-    region = "eu-north-1"
+  region = "eu-north-1"
 }
 resource "aws_s3_bucket" "my-static-website" {
   bucket        = "gh-090124"
@@ -36,7 +36,7 @@ resource "aws_s3_bucket_ownership_controls" "my-static-website-controls" {
   }
 }
 resource "aws_s3_bucket_public_access_block" "my-static-website-access-block" {
-  bucket = aws_s3_bucket.my-static-website.id
+  bucket                  = aws_s3_bucket.my-static-website.id
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
@@ -64,5 +64,5 @@ resource "aws_s3_bucket_policy" "my-static-website-policy" {
       },
     ]
   })
-  depends_on = [ aws_s3_bucket.my-static-website , aws_s3_bucket_public_access_block.my-static-website-access-block ]
+  depends_on = [aws_s3_bucket.my-static-website, aws_s3_bucket_public_access_block.my-static-website-access-block]
 }
