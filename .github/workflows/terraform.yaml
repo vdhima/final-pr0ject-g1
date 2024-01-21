@@ -64,3 +64,18 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./api
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # Deploy to Kubernetes
+    - name: Set up Kubectl
+      uses: azure/setup-kubectl@v1
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/api app=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        kubectl rollout status deployment/api
+
+    # Deploy Frontend to S3
+    #- name: Deploy Frontend to S3
+    #  run: |
+    #    aws s3 sync ./web_client s3://your-s3-bucket-name --acl public-read
+    #  if: github.ref == 'refs/heads/vasil'  # Only deploy on the vasil branch
