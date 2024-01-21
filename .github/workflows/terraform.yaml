@@ -68,7 +68,7 @@ jobs:
 
     # Deploy to Kubernetes
     - name: Set up Kubectl
-      uses: azure/setup-kubectl@v1
+      uses: tale/setup-kubectl@v1
 
     - name: Deploy to Kubernetes
       run: |
